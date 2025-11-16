@@ -555,6 +555,34 @@
             color: var(--gray-400);
         }
 
+        /* Кнопка "Назад в главное меню" */
+        .news-item.back-button {
+            margin-top: 2rem; /* Отступ сверху в 1.5 раза больше (было 0.75rem между элементами) */
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+        }
+
+        .news-item.back-button h4 {
+            color: white;
+            font-weight: 700;
+        }
+
+        .news-item.back-button:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #63398a 100%);
+            box-shadow: 0 8px 16px -2px rgba(102, 126, 234, 0.4);
+            transform: translateY(-2px);
+        }
+
+        body.dark .news-item.back-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+        }
+
+        body.dark .news-item.back-button:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #63398a 100%);
+            border-color: #5568d3;
+        }
+
         .loading {
             text-align: center;
             padding: 3rem;
@@ -981,7 +1009,7 @@
         <!-- СТРАНИЦА: ЗАПИСИ ЭФИРОВ -->
         <div id="page-service1" class="page">
             <div class="hero">
-                <h2>🎥 Записи эфиров и разборов</h2>
+                <h2>&#127909; Записи эфиров и разборов</h2>
                 <p>Архив всех видеозаписей</p>
             </div>
             <div class="news-list" data-section="service_1_content">
@@ -992,7 +1020,7 @@
         <!-- СТРАНИЦА: КАРУСЕЛЬНИК -->
         <div id="page-service2" class="page">
             <div class="hero">
-                <h2>🎨 Карусельник</h2>
+                <h2>&#127912; Карусельник</h2>
                 <p>Создание каруселей для Instagram</p>
             </div>
             <div class="news-list" data-section="service_2_content">
@@ -1003,7 +1031,7 @@
 
     <script>
         // 🔥 ВСТАВЬ СЮДА URL СВОЕГО GOOGLE APPS SCRIPT
-       const API_URL = 'https://script.google.com/macros/s/AKfycby3TrCMx7NkNHkqEUBuuMxTCvwRjIMyb4qnUtn4OwlV51pP_94DR7HKbcR1s-gawizLhA/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycby3TrCMx7NkNHkqEUBuuMxTCvwRjIMyb4qnUtn4OwlV51pP_94DR7HKbcR1s-gawizLhA/exec';
 
         // Константы для кеширования
         const CACHE_KEY = 'mix_cabinet_data';
@@ -1015,7 +1043,7 @@
             "Загружаем ваши материалы...",
             "Обновляем подборку постов...",
             "Проверяем соединение...",
-            "Напоминаем: все нейросети работают на русском языке 🇷🇺",
+            "Напоминаем: все нейросети работают на русском языке &#127479;&#127482;",
             "Синхронизируем последние обновления...",
             "Подготавливаем свежий контент...",
             "Загружаем промпты и инструкции...",
@@ -1397,7 +1425,7 @@
                 const newsItem = document.createElement('div');
                 newsItem.className = 'news-item';
                 newsItem.innerHTML = `
-                    <h4>${item.label}</h4>
+                    <h4>${item.label.replace(/\n/g, '<br>')}</h4>
                 `;
                 newsItem.onclick = () => window.open(item.url, '_blank', 'noopener noreferrer');
                 container.appendChild(newsItem);
@@ -1415,10 +1443,11 @@
                 newsItem.className = 'news-item';
                 
                 if (item.url === '#main' || item.label.includes('Назад')) {
-                    newsItem.innerHTML = `<h4>← ${item.label}</h4>`;
+                    newsItem.classList.add('back-button'); // Добавляем специальный класс
+                    newsItem.innerHTML = `<h4>← ${item.label.replace(/\n/g, '<br>')}</h4>`;
                     newsItem.onclick = () => showPage('main');
                 } else {
-                    newsItem.innerHTML = `<h4>${item.label}</h4>`;
+                    newsItem.innerHTML = `<h4>${item.label.replace(/\n/g, '<br>')}</h4>`;
                     newsItem.onclick = () => window.open(item.url, '_blank', 'noopener noreferrer');
                 }
                 
