@@ -557,7 +557,7 @@
 
         /* Кнопка "Назад в главное меню" */
         .news-item.back-button {
-            margin-top: 2rem; /* Отступ сверху в 1.5 раза больше (было 0.75rem между элементами) */
+            margin-top: 2rem;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-color: #667eea;
         }
@@ -1006,32 +1006,15 @@
             </div>
         </div>
 
-        <!-- СТРАНИЦА: ЗАПИСИ ЭФИРОВ -->
-        <div id="page-service1" class="page">
-            <div class="hero">
-                <h2>&#127909; Записи эфиров и разборов</h2>
-                <p>Архив всех видеозаписей</p>
-            </div>
-            <div class="news-list" data-section="service_1_content">
-                <!-- Загружается динамически -->
-            </div>
-        </div>
-
-        <!-- СТРАНИЦА: КАРУСЕЛЬНИК -->
-        <div id="page-service2" class="page">
-            <div class="hero">
-                <h2>&#127912; Карусельник</h2>
-                <p>Создание каруселей для Instagram</p>
-            </div>
-            <div class="news-list" data-section="service_2_content">
-                <!-- Загружается динамически -->
-            </div>
+        <!-- ДИНАМИЧЕСКИЕ СТРАНИЦЫ СОЗДАЮТСЯ АВТОМАТИЧЕСКИ -->
+        <div id="dynamic-pages-container">
+            <!-- Страницы генерируются динамически из данных -->
         </div>
     </main>
 
     <script>
         // 🔥 ВСТАВЬ СЮДА URL СВОЕГО GOOGLE APPS SCRIPT
-const API_URL = 'https://script.google.com/macros/s/AKfycby3TrCMx7NkNHkqEUBuuMxTCvwRjIMyb4qnUtn4OwlV51pP_94DR7HKbcR1s-gawizLhA/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyZ9PWmsDXatsCTk-jhUZwRCqNqzId-LiVP4y4WcEbAQKYdgio-FTRlv9XSeH3qAfxITQ/exec';
 
         // Константы для кеширования
         const CACHE_KEY = 'mix_cabinet_data';
@@ -1043,7 +1026,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycby3TrCMx7NkNHkqEUBuuMxT
             "Загружаем ваши материалы...",
             "Обновляем подборку постов...",
             "Проверяем соединение...",
-            "Напоминаем: все нейросети работают на русском языке &#127479;&#127482;",
+            "Напоминаем: все нейросети работают на русском языке \uD83C\uDDF7\uD83C\uDDFA", // 🇷🇺
             "Синхронизируем последние обновления...",
             "Подготавливаем свежий контент...",
             "Загружаем промпты и инструкции...",
@@ -1056,6 +1039,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycby3TrCMx7NkNHkqEUBuuMxT
         let currentPage = 'main';
         let loaderTextIndex = 0;
         let loaderInterval = null;
+        let dynamicPages = {}; // Хранит информацию о динамических страницах
 
         // Prevent double-tap zoom
         let lastTouchEnd = 0;
@@ -1221,8 +1205,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycby3TrCMx7NkNHkqEUBuuMxT
                 hideSkeleton(); // Скрываем скелетон
                 
                 allData = cached.data;
-                renderMainPage();
-                showPage('main');
+                await initializeApp();
                 
                 // Показываем индикатор
                 const ageMinutes = Math.round(cached.age / 60000);
@@ -1266,20 +1249,14 @@ const API_URL = 'https://script.google.com/macros/s/AKfycby3TrCMx7NkNHkqEUBuuMxT
                     if (JSON.stringify(allData) !== JSON.stringify(data)) {
                         console.log('🔄 Данные изменились, обновляем интерфейс');
                         allData = data;
-                        renderMainPage();
-                        if (currentPage === 'service1') {
-                            renderServicePage('page-service1', 'service_1_content');
-                        } else if (currentPage === 'service2') {
-                            renderServicePage('page-service2', 'service_2_content');
-                        }
+                        await initializeApp();
                     }
                     showFreshnessIndicator('fresh', 'Данные обновлены');
                 } else {
                     // Первая загрузка
                     allData = data;
-                    renderMainPage();
+                    await initializeApp();
                     hideSkeleton(); // Скрываем скелетон
-                    showPage('main');
                     showFreshnessIndicator('fresh', 'Данные загружены');
                 }
                 
@@ -1299,6 +1276,80 @@ const API_URL = 'https://script.google.com/macros/s/AKfycby3TrCMx7NkNHkqEUBuuMxT
             }
         }
 
+        // 🔥 НОВАЯ ФУНКЦИЯ: Инициализация приложения
+        async function initializeApp() {
+            console.log('🚀 Инициализация приложения...');
+            
+            // Создаем динамические страницы
+            createDynamicPages();
+            
+            // Рендерим основной контент
+            renderMainPage();
+            
+            // Показываем главную страницу
+            showPage('main');
+        }
+
+        // 🔥 НОВАЯ ФУНКЦИЯ: Создание динамических страниц
+        function createDynamicPages() {
+            const container = document.getElementById('dynamic-pages-container');
+            container.innerHTML = ''; // Очищаем контейнер
+            dynamicPages = {}; // Сбрасываем реестр страниц
+
+            if (!allData || !allData.pageMetadata) {
+                console.log('⚠️ Нет метаданных для создания страниц');
+                return;
+            }
+
+            console.log('📄 Создаем динамические страницы:', allData.pageMetadata);
+
+            // Создаем страницу для каждой записи в pageMetadata
+            Object.keys(allData.pageMetadata).forEach(pageKey => {
+                const pageInfo = allData.pageMetadata[pageKey];
+                const pageId = `page-${pageKey.replace(/_/g, '-')}`;
+                
+           // Определяем эмодзи и описание на основе названия
+let emoji = '\uD83D\uDCCB'; // 📋
+let description = 'Полезные материалы и ресурсы';
+
+if (pageInfo.title.toLowerCase().includes('эфир') || 
+    pageInfo.title.toLowerCase().includes('запис')) {
+    emoji = '\uD83C\uDFA5'; // 🎥
+    description = 'Архив всех видеозаписей';
+} else if (pageInfo.title.toLowerCase().includes('карусель')) {
+    emoji = '\uD83C\uDFA8'; // 🎨
+    description = 'Создание каруселей для Instagram';
+} else if (pageInfo.title.toLowerCase().includes('дайджест')) {
+    emoji = '\uD83D\uDCCA'; // 📊
+    description = 'Регулярные подборки лучших трендов';
+}
+
+                // Создаем HTML страницы
+                const pageHTML = `
+                    <div id="${pageId}" class="page">
+                        <div class="hero">
+                            <h2>${emoji} ${pageInfo.title}</h2>
+                            <p>${description}</p>
+                        </div>
+                        <div class="news-list" data-section="${pageInfo.section}">
+                            <!-- Контент загружается динамически -->
+                        </div>
+                    </div>
+                `;
+
+                container.insertAdjacentHTML('beforeend', pageHTML);
+                
+                // Сохраняем информацию о странице
+                dynamicPages[pageKey] = {
+                    id: pageId,
+                    section: pageInfo.section,
+                    title: pageInfo.title
+                };
+
+                console.log(`✅ Создана страница: ${pageId} для раздела ${pageInfo.section}`);
+            });
+        }
+
         function renderMainPage() {
             renderTopPanel();
             renderQuickStart();
@@ -1307,7 +1358,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycby3TrCMx7NkNHkqEUBuuMxT
         }
 
         function renderTopPanel() {
-            if (!allData.main_top_panel) return;
+            if (!allData.sections || !allData.sections.main_top_panel) return;
             
             const container = document.querySelector('.nav-buttons[data-section="main_top_panel"]');
             if (!container) return;
@@ -1320,17 +1371,17 @@ const API_URL = 'https://script.google.com/macros/s/AKfycby3TrCMx7NkNHkqEUBuuMxT
                 'Поддержка': '<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m9.17 14.83-4.24 4.24"/><circle cx="12" cy="12" r="4"/></svg>'
             };
             
-            allData.main_top_panel.forEach(item => {
+            allData.sections.main_top_panel.forEach(item => {
                 const button = document.createElement('button');
                 button.className = 'nav-btn';
                 button.innerHTML = (icons[item.label] || '') + item.label;
-                button.onclick = () => window.open(item.url, '_blank', 'noopener noreferrer');
+                button.onclick = () => handleButtonClick(item);
                 container.appendChild(button);
             });
         }
 
         function renderQuickStart() {
-            if (!allData.main_quick_start) return;
+            if (!allData.sections || !allData.sections.main_quick_start) return;
             
             const container = document.querySelector('#page-main .cards-grid[data-section="main_quick_start"]');
             if (!container) return;
@@ -1355,7 +1406,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycby3TrCMx7NkNHkqEUBuuMxT
                 }
             };
             
-            allData.main_quick_start.forEach(item => {
+            allData.sections.main_quick_start.forEach(item => {
                 const data = cardData[item.label] || cardData['База знаний'];
                 
                 const card = document.createElement('div');
@@ -1371,33 +1422,22 @@ const API_URL = 'https://script.google.com/macros/s/AKfycby3TrCMx7NkNHkqEUBuuMxT
                         </div>
                     </div>
                 `;
-                card.onclick = () => window.open(item.url, '_blank', 'noopener noreferrer');
+                card.onclick = () => handleButtonClick(item);
                 container.appendChild(card);
             });
         }
 
         function renderExtraServices() {
-            if (!allData.main_extra_services) return;
+            if (!allData.sections || !allData.sections.main_extra_services) return;
             
             const container = document.querySelector('#page-main .small-cards-grid[data-section="main_extra_services"]');
             if (!container) return;
             
             container.innerHTML = '';
             
-            allData.main_extra_services.forEach(item => {
+            allData.sections.main_extra_services.forEach(item => {
                 const card = document.createElement('div');
                 card.className = 'small-card';
-                
-                const url = item.url.toLowerCase();
-                let clickHandler;
-                
-                if (url.includes('service_1') || url.includes('эфир')) {
-                    clickHandler = () => showPage('service1');
-                } else if (url.includes('service_2') || url.includes('карусель')) {
-                    clickHandler = () => showPage('service2');
-                } else {
-                    clickHandler = () => window.open(item.url, '_blank', 'noopener noreferrer');
-                }
                 
                 card.innerHTML = `
                     <div class="small-card-icon orange">
@@ -1408,74 +1448,117 @@ const API_URL = 'https://script.google.com/macros/s/AKfycby3TrCMx7NkNHkqEUBuuMxT
                     </div>
                     <h4>${item.label}</h4>
                 `;
-                card.onclick = clickHandler;
+                card.onclick = () => handleButtonClick(item);
                 container.appendChild(card);
             });
         }
 
         function renderNews() {
-            if (!allData.main_news) return;
+            if (!allData.sections || !allData.sections.main_news) return;
             
             const container = document.querySelector('#page-main .news-list[data-section="main_news"]');
             if (!container) return;
             
             container.innerHTML = '';
             
-            allData.main_news.forEach(item => {
+            allData.sections.main_news.forEach(item => {
                 const newsItem = document.createElement('div');
                 newsItem.className = 'news-item';
                 newsItem.innerHTML = `
                     <h4>${item.label.replace(/\n/g, '<br>')}</h4>
                 `;
-                newsItem.onclick = () => window.open(item.url, '_blank', 'noopener noreferrer');
+                newsItem.onclick = () => handleButtonClick(item);
                 container.appendChild(newsItem);
             });
         }
 
-        function renderServicePage(pageId, sectionKey) {
-            const container = document.querySelector(`#${pageId} .news-list[data-section="${sectionKey}"]`);
-            if (!container || !allData[sectionKey]) return;
+        // 🔥 НОВАЯ ФУНКЦИЯ: Универсальный обработчик кликов
+        function handleButtonClick(item) {
+            console.log('🖱️ Клик по элементу:', item);
+
+            // Проверяем тип элемента
+            if (item.pageType === 'internal_page') {
+                // Это внутренняя страница — открываем её
+                const pageKey = item.url; // например, "service_1_content"
+                showPage(pageKey);
+            } else if (item.pageType === 'back_button' || item.url === '#main') {
+                // Это кнопка "Назад" — возвращаемся на главную
+                showPage('main');
+            } else if (item.pageType === 'external' || item.url.startsWith('http')) {
+                // Это внешняя ссылка — открываем в новой вкладке
+                window.open(item.url, '_blank', 'noopener noreferrer');
+            } else {
+                // По умолчанию — пробуем открыть как внешнюю ссылку
+                window.open(item.url, '_blank', 'noopener noreferrer');
+            }
+        }
+
+        // Рендер контента динамической страницы
+        function renderDynamicPage(pageKey) {
+            const pageInfo = dynamicPages[pageKey];
+            if (!pageInfo) {
+                console.error('❌ Страница не найдена:', pageKey);
+                return;
+            }
+
+            const sectionKey = pageInfo.section;
+            const container = document.querySelector(`#${pageInfo.id} .news-list[data-section="${sectionKey}"]`);
+            
+            if (!container || !allData.sections || !allData.sections[sectionKey]) {
+                console.error('❌ Контейнер или данные не найдены для:', sectionKey);
+                return;
+            }
 
             container.innerHTML = '';
 
-            allData[sectionKey].forEach(item => {
+            console.log('📝 Рендерим контент для:', sectionKey, allData.sections[sectionKey]);
+
+            allData.sections[sectionKey].forEach(item => {
                 const newsItem = document.createElement('div');
                 newsItem.className = 'news-item';
                 
-                if (item.url === '#main' || item.label.includes('Назад')) {
-                    newsItem.classList.add('back-button'); // Добавляем специальный класс
+                if (item.pageType === 'back_button' || item.url === '#main') {
+                    newsItem.classList.add('back-button');
                     newsItem.innerHTML = `<h4>← ${item.label.replace(/\n/g, '<br>')}</h4>`;
-                    newsItem.onclick = () => showPage('main');
                 } else {
                     newsItem.innerHTML = `<h4>${item.label.replace(/\n/g, '<br>')}</h4>`;
-                    newsItem.onclick = () => window.open(item.url, '_blank', 'noopener noreferrer');
                 }
                 
+                newsItem.onclick = () => handleButtonClick(item);
                 container.appendChild(newsItem);
             });
         }
 
+        // 🔥 ОБНОВЛЕННАЯ ФУНКЦИЯ: Показать страницу
         function showPage(pageName) {
-            console.log('showPage:', pageName);
+            console.log('📄 Показываем страницу:', pageName);
             
+            // Скрываем все страницы
             document.querySelectorAll('.page').forEach(page => {
                 page.classList.remove('active');
             });
 
-            switch(pageName) {
-                case 'main':
-                    document.getElementById('page-main').classList.add('active');
-                    break;
-
-                case 'service1':
-                    document.getElementById('page-service1').classList.add('active');
-                    renderServicePage('page-service1', 'service_1_content');
-                    break;
-
-                case 'service2':
-                    document.getElementById('page-service2').classList.add('active');
-                    renderServicePage('page-service2', 'service_2_content');
-                    break;
+            if (pageName === 'main') {
+                // Главная страница
+                document.getElementById('page-main').classList.add('active');
+            } else if (dynamicPages[pageName]) {
+                // Динамическая страница
+                const pageInfo = dynamicPages[pageName];
+                const pageElement = document.getElementById(pageInfo.id);
+                
+                if (pageElement) {
+                    // Рендерим контент страницы
+                    renderDynamicPage(pageName);
+                    
+                    // Показываем страницу
+                    pageElement.classList.add('active');
+                } else {
+                    console.error('❌ Элемент страницы не найден:', pageInfo.id);
+                    showPage('main'); // Возвращаемся на главную
+                }
+            } else {
+                console.error('❌ Неизвестная страница:', pageName);
+                showPage('main'); // Возвращаемся на главную
             }
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
